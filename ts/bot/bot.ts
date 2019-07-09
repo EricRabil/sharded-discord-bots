@@ -1,12 +1,22 @@
 import { Client } from "discord.js";
+import fs from "fs-extra";
 import { EventType, parseMessage } from "..";
 import { Logger, Log } from "../logger";
-import { bot_token } from "../const";
+import { bot_token, bot_prefix } from "../const";
+import { CommandHandler, Context } from "../api/command";
+import { resolve } from "path";
 
 export interface BotOptions {
     shardID?: number;
     token: string;
     useIPC?: boolean;
+}
+
+export interface CommandList {
+    [name: string]: {
+        middleware?: CommandHandler[];
+        handler: CommandHandler;
+    }
 }
 
 /**
@@ -18,8 +28,12 @@ export default class Bot {
     useIPC: boolean = false;
     log: Logger;
     client: Client;
+    commandList: CommandList = {};
+
+    public static bot: Bot;
 
     constructor({shardID, token, useIPC}: BotOptions) {
+        Bot.bot = this;
         this.shardID = shardID || this.shardID;
         this.token = token;
         this.useIPC = useIPC || this.useIPC;
@@ -60,7 +74,52 @@ export default class Bot {
             return;
         }
 
+        await this.importAllCommandFiles();
+
+        this.client.on("message", async message => {
+            if (!message.content.startsWith(bot_prefix)) return;
+            const [ command, ...args ] = message.content.substring(bot_prefix.length).split(' ');
+
+            const handlers = this.commandList[command];
+
+            if (!handlers) {
+                return;
+            }
+
+            let { handler, middleware } = handlers;
+
+            const context: Context = {
+                state: {},
+                message
+            };
+
+            if (middleware) {
+                const stop = await new Promise((resolve) => {
+                    let current: CommandHandler | undefined;
+                    const next = (err?: any) => {
+                        current = middleware!.shift();
+                        if (!current) {
+                            return resolve();
+                        }
+                        current(context, next).catch(e => this.log.error("got an error during command exec", e));
+                    }
+                    next();
+                });
+
+                if (stop) {
+                    return;
+                }
+            }
+
+            handler(context, () => undefined);
+        });
+
         this.log("im ready!");
+    }
+
+    async importAllCommandFiles() {
+        const commands = await fs.readdir(resolve(__dirname, "commands")).then(commands => commands.map(command => resolve(__dirname, "commands", command)));
+        await Promise.all(commands.map(command => import(command)));
     }
 }
 

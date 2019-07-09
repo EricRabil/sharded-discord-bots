@@ -23,7 +23,9 @@ export class Logger extends Function {
     constructor(private prefix: string = "") {
         super('...args', 'return this.__call__(...args)');
 
-        return this.bind(this);
+        const that = this.bind(this);
+        Object.assign(that, { prefix });
+        return that;
     }
 
     debug(message: string, ...data: any[]) {

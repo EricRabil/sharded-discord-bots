@@ -10,14 +10,15 @@ import { Log } from "../logger";
 const create_child = (shardID: number) => child_process.fork(bot_path, [shardID.toFixed(0)], {
     stdio: [
         process.stdin,
+        process.stderr,
         process.stdout,
         'pipe',
         'ipc'
     ],
     env: {
-        SHARD_ID: shardID,
-        SHARD_COUNT: how_many_bots,
-        FORCE_COLOR: 1
+        SHARD_ID: shardID.toFixed(0),
+        SHARD_COUNT: how_many_bots.toFixed(0),
+        FORCE_COLOR: "1"
     }
 });
 
