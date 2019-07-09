@@ -1,0 +1,14 @@
+{
+  "name": "sharded-discord-bots",
+  "version": "1.0.0",
+  "description": "im finally doing what the haters never could",
+  "main": "js/index.js",
+  "repository": "https://github.com/EricRabil/sharded-discord-bots.git",
+  "author": "Eric Rabil <ericjrabil@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "big-integer": "^1.6.44",
+    "chalk": "^2.4.2",
+    "discord.js": "^11.5.1"
+  }
+}
