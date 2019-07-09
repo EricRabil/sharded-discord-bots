@@ -1,16 +1,13 @@
-import bignum from "big-integer";
 import child_process, { ChildProcess } from "child_process";
 import { bot_path, how_many_bots } from "../const";
 import { parseMessage, EventType } from "..";
 import { Log } from "../logger";
 
-interface BotParameters {
-    shardID: number;
-}
-
-const calculateShardID = (guildID: string) => bignum(guildID).shiftRight(22).mod(how_many_bots).toJSNumber();
-
-const spawn_bot = (shardID: number) => child_process.fork(bot_path, [shardID.toFixed(0)], {
+/**
+ * Creates a child process that runs the code at bot.ts
+ * @param shardID the shard ID of this child
+ */
+const create_child = (shardID: number) => child_process.fork(bot_path, [shardID.toFixed(0)], {
     stdio: [
         process.stdin,
         process.stdout,
@@ -19,7 +16,8 @@ const spawn_bot = (shardID: number) => child_process.fork(bot_path, [shardID.toF
     ],
     env: {
         SHARD_ID: shardID,
-        SHARD_COUNT: how_many_bots
+        SHARD_COUNT: how_many_bots,
+        FORCE_COLOR: 1
     }
 });
 
@@ -27,6 +25,9 @@ export interface SupervisorOptions {
     shardAmount: number;
 }
 
+/**
+ * Supervisor class that manages the child process bots
+ */
 export default class Supervisor {
     shardAmount: number;
     children: ChildProcess[] = [];
@@ -34,10 +35,15 @@ export default class Supervisor {
 
     constructor({shardAmount}: SupervisorOptions) {
         this.shardAmount = shardAmount;
+
+        // create the # of shards specified in config
         for (let shardID = 0; shardID < shardAmount; shardID++) {
-            const bot = spawn_bot(shardID);
+            const bot = create_child(shardID);
+
+            // assign bot process to children array
             this.children[shardID] = bot;
 
+            // add listener
             bot.on("message", rawMessage => {
                 const message = parseMessage(this.log, rawMessage);
 

@@ -1,9 +1,7 @@
-import chalk from "chalk";
-import discord, { Client, ClientOptions } from "discord.js";
-import events from "events";
-import { isValidEvent, EventType, IPCMessage, parseMessage } from "..";
+import { Client } from "discord.js";
+import { EventType, parseMessage } from "..";
 import { Logger, Log } from "../logger";
-import { bot_token, how_many_bots } from "../const";
+import { bot_token } from "../const";
 
 export interface BotOptions {
     shardID?: number;
@@ -11,6 +9,9 @@ export interface BotOptions {
     useIPC?: boolean;
 }
 
+/**
+ * Lightweight controller class for the bot processes
+ */
 export default class Bot {
     shardID: number | null = null;
     token: string;
@@ -24,6 +25,7 @@ export default class Bot {
         this.useIPC = useIPC || this.useIPC;
         this.log = Log.fork(typeof shardID === "number" ? `bot[${shardID}]` : "bot");
 
+        // send ipc hello and begin listening for messages
         if (this.useIPC && process.send) {
             process.send!(JSON.stringify({
                 event: EventType.HELLO
@@ -45,17 +47,16 @@ export default class Bot {
         }
     }
 
+    /**
+     * Log in to discord!!
+     */
     async login() {
-        this.log("hi sisters");
         try {
-            this.log("hi sisters");
-
             this.client = new Client();
-            this.log("hi sisters");
 
             await this.client.login(bot_token);
         } catch (e) {
-            this.log.error("fuck, couldn't login!", e);
+            this.log.error("couldn't login!", e);
             return;
         }
 

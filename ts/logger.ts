@@ -10,6 +10,15 @@ export declare interface Logger extends Shorthand {
     (message: string, ...data: any[]): any;
 }
 
+/**
+ * Lightweight logging class with color
+ * 
+ * It extends function so that you can call any instance of Logger as a shorthand for logging
+ * 
+ * const log = new Logger();
+ * log("yay!");
+ * log.warn("crap!");
+ */
 export class Logger extends Function {
     constructor(private prefix: string = "") {
         super('...args', 'return this.__call__(...args)');
